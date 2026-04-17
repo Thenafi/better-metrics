@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Better Metrics — Reservation Dashboard</title>
+  
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono&display=swap" />
+  <link rel="stylesheet" href="https://unpkg.com/carbon-components/css/carbon-components.min.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="bx--body">
+
+  <!-- UI Shell Header -->
+  <header class="bx--header" role="banner" aria-label="Better Metrics" data-header>
+    <a class="bx--header__name" href="#">
+      <span class="bx--header__name--prefix">Better&nbsp;Metrics</span>&nbsp;Dashboard
+    </a>
+
+    <!-- Right side of header: loading indicator + settings toggle -->
+    <div class="bx--header__global">
+
+      <!-- Loading indicator — shown only when fetching -->
+      <div id="header-loading" class="header-loading" style="display:none;" aria-label="Loading">
+        <div class="bx--loading bx--loading--small">
+          <svg class="bx--loading__svg" viewBox="0 0 100 100">
+            <title>Loading</title>
+            <circle class="bx--loading__background" cx="50%" cy="50%" r="44"/>
+            <circle class="bx--loading__stroke" cx="50%" cy="50%" r="44"/>
+          </svg>
+        </div>
+        <span class="header-loading__label">Fetching…</span>
+      </div>
+
+      <!-- Settings toggle button -->
+      <button
+        id="settings-toggle"
+        class="bx--header__action"
+        type="button"
+        aria-label="Open settings"
+        title="Date range &amp; grouping"
+        style="display:none;"
+      >
+        <!-- Settings / Tune icon -->
+        <svg focusable="false" xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+             viewBox="0 0 32 32" fill="currentColor" aria-hidden="true">
+          <path d="M30 7H16a4 4 0 0 0-7.88 0H2v2h6.12A4 4 0 0 0 16 9h14zM12 9a2 2 0 1 1 2-2 2 2 0 0 1-2 2zM2 25h14a4 4 0 0 0 7.88 0H30v-2h-6.12A4 4 0 0 0 16 23H2zm18 2a2 2 0 1 1 2-2 2 2 0 0 1-2 2zM30 15H21.88a4 4 0 0 0-7.88 0H2v2h12a4 4 0 0 0 7.88 0H30zm-12 3a2 2 0 1 1 2-2 2 2 0 0 1-2 2z"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Settings slide-down panel (hidden by default when UUID in URL) -->
+  <div id="settings-panel" class="settings-panel" style="display:none;" aria-hidden="true">
+    <div class="bx--grid">
+      <div class="bx--row">
+        <div class="bx--col">
+          <div class="settings-panel__inner">
+
+            <!-- UUID (only shown if no URL param) -->
+            <div class="control-item" id="uuid-container" style="display:none;">
+              <div class="bx--form-item">
+                <label for="uuid-input" class="bx--label">View UUID</label>
+                <input id="uuid-input" type="text" class="bx--text-input" placeholder="e.g. 6c74ea0f-…" autocomplete="off">
+              </div>
+            </div>
+
+            <!-- Start Date -->
+            <div class="control-item">
+              <div class="bx--form-item">
+                <label for="start-date" class="bx--label">Start Date</label>
+                <input id="start-date" type="date" class="bx--text-input">
+              </div>
+            </div>
+
+            <!-- End Date -->
+            <div class="control-item">
+              <div class="bx--form-item">
+                <label for="end-date" class="bx--label">End Date</label>
+                <input id="end-date" type="date" class="bx--text-input">
+              </div>
+            </div>
+
+            <!-- Group By switcher -->
+            <div class="control-item">
+              <div class="bx--form-item">
+                <label class="bx--label">Group By</label>
+                <div data-content-switcher class="bx--content-switcher" id="group-switcher">
+                  <button class="bx--content-switcher-btn bx--content-switcher--selected" data-value="checkout">
+                    <span class="bx--content-switcher__label">Check-out date</span>
+                  </button>
+                  <button class="bx--content-switcher-btn" data-value="property">
+                    <span class="bx--content-switcher__label">Property</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Fetch -->
+            <div class="control-item control-item--action">
+              <button id="fetch-btn" class="bx--btn bx--btn--primary" type="button">
+                Apply
+                <svg focusable="false" preserveAspectRatio="xMidYMid meet"
+                     xmlns="http://www.w3.org/2000/svg" fill="currentColor"
+                     width="16" height="16" viewBox="0 0 32 32" aria-hidden="true" class="bx--btn__icon">
+                  <path d="M26 18A10 10 0 1 1 16 8h6.18l-3.58 3.59L20 13l6-6-6-6-1.4 1.41L22.17 6H16A12 12 0 1 0 28 18Z"/>
+                </svg>
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Full-page initial loading state -->
+  <div id="initial-loading" class="initial-loading" style="display:none;">
+    <div class="bx--loading">
+      <svg class="bx--loading__svg" viewBox="0 0 100 100">
+        <title>Loading</title>
+        <circle class="bx--loading__background" cx="50%" cy="50%" r="44"/>
+        <circle class="bx--loading__stroke" cx="50%" cy="50%" r="44"/>
+      </svg>
+    </div>
+    <p class="initial-loading__label">Fetching reservations…</p>
+  </div>
+
+  <!-- If no UUID in URL: show the controls inline (not via panel) -->
+  <div id="controls-row" class="bx--grid" style="display:none;">
+    <div class="bx--row">
+      <div class="bx--col">
+        <section class="controls-section">
+          <div class="controls-row">
+            <div class="control-item" id="uuid-container-inline">
+              <div class="bx--form-item">
+                <label for="uuid-input-inline" class="bx--label">View UUID</label>
+                <input id="uuid-input-inline" type="text" class="bx--text-input" placeholder="e.g. 6c74ea0f-…" autocomplete="off">
+              </div>
+            </div>
+            <div class="control-item">
+              <div class="bx--form-item">
+                <label for="start-date-inline" class="bx--label">Start Date</label>
+                <input id="start-date-inline" type="date" class="bx--text-input">
+              </div>
+            </div>
+            <div class="control-item">
+              <div class="bx--form-item">
+                <label for="end-date-inline" class="bx--label">End Date</label>
+                <input id="end-date-inline" type="date" class="bx--text-input">
+              </div>
+            </div>
+            <div class="control-item">
+              <div class="bx--form-item">
+                <label class="bx--label">Group By</label>
+                <div data-content-switcher class="bx--content-switcher" id="group-switcher-inline">
+                  <button class="bx--content-switcher-btn bx--content-switcher--selected" data-value="checkout">
+                    <span class="bx--content-switcher__label">Check-out date</span>
+                  </button>
+                  <button class="bx--content-switcher-btn" data-value="property">
+                    <span class="bx--content-switcher__label">Property</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="control-item control-item--action">
+              <button id="fetch-btn-inline" class="bx--btn bx--btn--primary" type="button">
+                Fetch Data
+                <svg focusable="false" preserveAspectRatio="xMidYMid meet"
+                     xmlns="http://www.w3.org/2000/svg" fill="currentColor"
+                     width="16" height="16" viewBox="0 0 32 32" aria-hidden="true" class="bx--btn__icon">
+                  <path d="M26 18A10 10 0 1 1 16 8h6.18l-3.58 3.59L20 13l6-6-6-6-1.4 1.41L22.17 6H16A12 12 0 1 0 28 18Z"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <main class="bx--content bx--grid" id="main-content">
+    <!-- Status Notifications -->
+    <div class="bx--row">
+      <div class="bx--col" id="status-wrapper"></div>
+    </div>
+    <!-- Results (Tiles + Data Tables) -->
+    <div class="bx--row">
+      <div class="bx--col" id="results"></div>
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
