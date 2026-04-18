@@ -15,6 +15,20 @@ body {
   margin-left: auto;
 }
 
+/* Center the settings icon inside the header action button */
+.bx--header__action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Muted label for missing check-in/check-out */
+.no-date {
+  color: #a8a8a8;
+  font-size: 0.8em;
+  font-style: italic;
+}
+
 .header-loading {
   display: flex;
   align-items: center;

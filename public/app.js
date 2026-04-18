@@ -167,17 +167,14 @@ async function fetchReservations({ isInitial = false } = {}) {
 }
 
 // ── Same-day turnover ─────────────────────────────────────────────
+// Only flag the CHECK-OUT reservation (someone else checks in the same day)
 function isSameDayTurnover(row, allData) {
-  if (!row.property_name) return false;
-  if (row.checkout_date && allData.some(r =>
+  if (!row.property_name || !row.checkout_date) return false;
+  return allData.some(r =>
     r.property_name === row.property_name &&
     r.checkin_date  === row.checkout_date &&
-    r.code !== row.code)) return true;
-  if (row.checkin_date && allData.some(r =>
-    r.property_name === row.property_name &&
-    r.checkout_date === row.checkin_date &&
-    r.code !== row.code)) return true;
-  return false;
+    r.code !== row.code
+  );
 }
 
 // ── Render ────────────────────────────────────────────────────────
@@ -226,10 +223,16 @@ function renderResults(data) {
     const rows = reservations.map(r => {
       const guest   = [r.guest_first_name, r.guest_last_name].filter(Boolean).join(' ') || '—';
       const sameDay = isSameDayTurnover(r, data);
+      const checkinCell  = r.checkin_date
+        ? formatDate(r.checkin_date)
+        : '<span class="no-date">No check-in</span>';
+      const checkoutCell = r.checkout_date
+        ? `<strong>${formatDate(r.checkout_date)}</strong>`
+        : '<span class="no-date">No check-out</span>';
       return `
         <tr>
-          <td>${formatDate(r.checkin_date)}</td>
-          <td><strong>${formatDate(r.checkout_date)}</strong></td>
+          <td>${checkinCell}</td>
+          <td>${checkoutCell}</td>
           <td>${escapeHtml(guest)}</td>
           <td><code style="background:#e8e8e8;padding:1px 5px;font-size:.8em">${escapeHtml(r.code || '—')}</code></td>
           <td>${escapeHtml(r.property_name || '—')}</td>
