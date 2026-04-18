@@ -216,9 +216,46 @@ function renderResults(data) {
       </div>
     </div>`;
 
+  // When grouping by checkout, fill in ALL dates in the range so empty days are visible
+  if (groupBy === 'checkout') {
+    const startStr = getStartInput()?.value;
+    const endStr   = getEndInput()?.value;
+    if (startStr && endStr) {
+      const allDates = new Map();
+      let cursor = new Date(startStr + 'T00:00:00');
+      const endDate = new Date(endStr + 'T00:00:00');
+      while (cursor <= endDate) {
+        const iso = toISO(cursor);
+        allDates.set(iso, groups.get(iso) || []);
+        cursor = addDays(cursor, 1);
+      }
+      // Also include any dates from data that might fall outside the range
+      for (const [key, val] of groups) {
+        if (!allDates.has(key)) allDates.set(key, val);
+      }
+      groups.clear();
+      for (const [key, val] of allDates) {
+        groups.set(key, val);
+      }
+    }
+  }
+
   let groupsHtml = '';
   for (const [groupName, reservations] of groups) {
     const displayName = groupBy === 'checkout' ? formatDate(groupName) : groupName;
+
+    if (reservations.length === 0) {
+      // Empty day — show a clear "no checkouts" message
+      groupsHtml += `
+        <div class="data-group data-group--empty">
+          <div class="data-group-header data-group-header--empty">
+            <span class="data-group-title">${escapeHtml(displayName)}</span>
+            <span class="bx--tag bx--tag--cool-gray">0</span>
+          </div>
+          <div class="data-group-empty-msg">No check-outs</div>
+        </div>`;
+      continue;
+    }
 
     const rows = reservations.map(r => {
       const guest   = [r.guest_first_name, r.guest_last_name].filter(Boolean).join(' ') || '—';

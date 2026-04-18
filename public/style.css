@@ -205,6 +205,23 @@ body {
   font-family: 'IBM Plex Sans', sans-serif;
 }
 
+/* Empty day groups (no checkouts) */
+.data-group--empty {
+  opacity: 0.6;
+}
+
+.data-group-header--empty {
+  border-left-color: #c6c6c6;
+}
+
+.data-group-empty-msg {
+  padding: 0.75rem 1rem;
+  color: #6f6f6f;
+  font-size: 0.875rem;
+  font-style: italic;
+  font-family: 'IBM Plex Sans', sans-serif;
+}
+
 /* ── Table scroll wrapper ──────────────────────────────────────── */
 .table-responsive-wrap {
   width: 100%;
