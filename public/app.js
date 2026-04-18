@@ -229,10 +229,6 @@ function renderResults(data) {
         allDates.set(iso, groups.get(iso) || []);
         cursor = addDays(cursor, 1);
       }
-      // Also include any dates from data that might fall outside the range
-      for (const [key, val] of groups) {
-        if (!allDates.has(key)) allDates.set(key, val);
-      }
       groups.clear();
       for (const [key, val] of allDates) {
         groups.set(key, val);
